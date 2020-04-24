@@ -1,0 +1,35 @@
+參數提供:(fuzzy_c_means.ipynb 與k_means.ipynb 皆同)
+	data_x :資料的feature,格式可為pandas.DataFrame或numpy.array
+	data_y :資料的label,計算準確率用,格式須為numpy.array
+	Simulate_time :欲模擬的次數
+
+環境設定:
+	python	    ==3.7.1
+	numpy	    ==1.15.4
+	pandas	    ==0.23.4
+	scikit-learn==0.9.0
+
+如何使用:
+	k_means.ipynb : 
+			需用jupyter notebook開啟
+			若要使用abalone dataset請將第三個cell註解掉
+			若要使用iris dataset請將第二個cell註解掉
+			若要使用其他dataset需自行將資料分為data_x與data_y
+
+	fuzzy_c_means.ipynb:
+			需用jupyter notebook開啟
+			若要使用abalone dataset請將第三個cell註解掉
+			若要使用iris dataset請將第二個cell註解掉
+			若要使用其他dataset需自行將資料分為data_x與data_y
+
+	k_means.py    : 
+			使用指令python k_means.py或用IDE執行即可
+			若要使用abalone dataset請將 #In[3]部分 註解掉
+			若要使用iris dataset請將 #In[2]部分 註解掉
+			若要使用其他dataset需自行將資料分為data_x與data_y
+
+	fuzzy_c_means.py:
+			使用指令python fuzzy_c_means.py或用IDE執行即可
+			若要使用abalone dataset請將 #In[3]部分 註解掉
+			若要使用iris dataset請將 #In[2]部分 註解掉
+			若要使用其他dataset需自行將資料分為data_x與data_y
