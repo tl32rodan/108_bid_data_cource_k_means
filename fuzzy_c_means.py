@@ -18,12 +18,12 @@ from sklearn import preprocessing
 
 # ## Abalone dataset
 
-# In[2]:
+# In[22]:
 
 
 #data_x : features (Dataframe)
 #data_y : labels   (np.array)
-'''
+
 column_names = ["sex", "length", "diameter", "height", "whole weight", 
                 "shucked weight", "viscera weight", "shell weight", "rings"]
 abalone = pd.read_csv("abalone.data",names=column_names)
@@ -33,14 +33,28 @@ data_x = abalone.drop(columns=["rings"])
 
 #one-hot encoding
 dfDummies = pd.get_dummies(data_x['sex'], prefix = 'sex')
+column_names = pd.concat([data_x.drop(columns=['sex']), dfDummies], axis=1).columns
 data_x = pd.DataFrame(preprocessing.scale(pd.concat([data_x.drop(columns=['sex']), dfDummies], axis=1)))
+data_x.columns=column_names
+#data_x = pd.DataFrame(pd.concat([data_x.drop(columns=['sex']), dfDummies], axis=1))
+
+
+data_x.head()
+
+
+# In[18]:
+
+
+
+
+
+# In[ ]:
+
 
 data_y = np.array(abalone["rings"])
 data_y[data_y<11]    = 0
 data_y[data_y>=11]   = 1
 Simulate_time = 10
-data_x
-'''
 
 
 # ## Iris Dataset
@@ -185,24 +199,16 @@ class our_k_means:
 #---------------------------------------------------------------------------------    
     def kmeans_init(self):
         
-        self.data = self.data_x.values
+        self.data = list(self.data_x.values)
         self.cent = np.zeros((self.K,self.DIM))
         self.table= np.zeros((self.DCNT,self.K))
         self.dis_k= np.zeros((self.K,self.DIM))
         self.cent_c=np.zeros(self.K)
         self.U    = np.zeros((self.DCNT,self.K))
                 
-        pick = []
-        counter = 0
-        while(counter<self.K):
-            rnd = random.randint(0,self.DCNT-1)
-            if(rnd not in pick):
-                pick.append(rnd)
-                counter=counter+1
-                
-        for i in range(self.K):
-            for j in range(self.DIM):
-                self.cent[i][j] = self.data[pick[i]][j] 
+        
+        # randomly pick k data as centroid
+        self.cent = random.sample(self.data, self.K)
       
 
     def update_cent(self):

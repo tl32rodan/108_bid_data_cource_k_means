@@ -17,12 +17,12 @@ from sklearn import preprocessing
 
 # ## Abalone dataset
 
-# In[2]:
+# In[3]:
 
 
 #data_x : features (Dataframe)
 #data_y : labels   (np.array)
-'''
+
 column_names = ["sex", "length", "diameter", "height", "whole weight", 
                 "shucked weight", "viscera weight", "shell weight", "rings"]
 abalone = pd.read_csv("abalone.data",names=column_names)
@@ -32,19 +32,22 @@ data_x = abalone.drop(columns=["rings"])
 
 #one-hot encoding
 dfDummies = pd.get_dummies(data_x['sex'], prefix = 'sex')
+column_names = pd.concat([data_x.drop(columns=['sex']), dfDummies], axis=1).columns
 data_x = pd.DataFrame(preprocessing.scale(pd.concat([data_x.drop(columns=['sex']), dfDummies], axis=1)))
+data_x.columns=column_names
+#data_x = pd.DataFrame(pd.concat([data_x.drop(columns=['sex']), dfDummies], axis=1))
+
 
 data_y = np.array(abalone["rings"])
 data_y[data_y<11]    = 0
 data_y[data_y>=11]   = 1
 Simulate_time = 10
-data_x
-'''
+data_x.head(10)
 
 
 # ## Iris Dataset
 
-# In[3]:
+# In[19]:
 
 
 #data_x : features (np.array)
@@ -54,10 +57,8 @@ iris = datasets.load_iris()
 data_x = iris.data
 data_y = iris.target
 
-Simulate_time = 100
 
-
-# In[4]:
+# In[20]:
 
 
 class our_k_means:
@@ -72,7 +73,7 @@ class our_k_means:
         self.DIM  = len(self.data_x.columns)       #資料維度
         self.K    = len(np.unique(self.data_y))    #叢聚個數
         #self.K    = np.amax(self.data_y)+1        #叢聚個數
-        self.MAX_ITER = 30                         #最大迭代 
+        self.MAX_ITER = 50                         #最大迭代 
         self.MIN_PT = 0                            #最小變動點
         
         #k-means過程的參數
@@ -99,19 +100,19 @@ class our_k_means:
         #first iteration 
         self.ch_pt = 0          
         self.iterl = 0
-        self.sse2 = self.update_table()
-        sse1 = self.sse2-1
-        
+        self.sse2 = 0
+        sse1 = 1
         
         #update centroid & data clustering
         while self.iterl<self.MAX_ITER and sse1!=self.sse2 and self.ch_pt >self.MIN_PT  :
             sse1 = self.sse2
-            self.iterl+=1
-            self.update_cent()
+            
             self.sse2 = self.update_table()
+            self.update_cent()
+            
+            self.iterl+=1
         
         self.table = self.table.astype(int)
-        
         
         
     #Calculate average accuracy    
@@ -122,6 +123,7 @@ class our_k_means:
             self.run()
             self.calculate_origin_mass()
             self.cent_name = self.centroid_names()
+            
             # Avoid the rare situations that some cluster are gone
             if len(np.unique(self.cent_name)) != self.K:
                 continue
@@ -129,8 +131,7 @@ class our_k_means:
             self.nearest_cluster()
             i += 1
             self.acc += accuracy_score(self.data_y,self.table)
-            
-            
+
             
             #self.print_result()
         
@@ -190,37 +191,30 @@ class our_k_means:
 #---------------------------------------------------------------------------------    
     def kmeans_init(self):
         
-        self.data = self.data_x.values
-        self.cent = np.zeros((self.K,self.DIM))
+        self.data = list(self.data_x.values)
         self.table= np.zeros(self.DCNT)
         self.dis_k= np.zeros((self.K,self.DIM))
         self.cent_c=np.zeros(self.K)
                 
-        pick = []
-        counter = 0
-        while(counter<self.K):
-            rnd = random.randint(0,self.DCNT-1)
-            if(rnd not in pick):
-                pick.append(rnd)
-                counter=counter+1
-                
-        for i in range(self.K):
-            for j in range(self.DIM):
-                self.cent[i][j] = self.data[pick[i]][j] 
+        # randomly pick k data as centroid
+        self.cent = random.sample(self.data, self.K)
         
     
     def cal_distance(self,x,y):
-        sum = 0
+        s = 0
         for i in range(self.DIM):
-            sum = sum + (self.data[x][i]-self.cent[y][i])*( self.data[x][i]-self.cent[y][i])
-        return sum
+            s = s + (self.data[x][i]-self.cent[y][i])**2
+        return s
 
             
     def update_table(self):
         t_sse = 0
         self.ch_pt = 0 
+        self.cent_c = np.zeros(self.K)
+        self.dis_k = np.zeros((self.K,self.DIM))
         
         for i in range(self.DCNT):
+            # find the nearest centroid of each data
             min_dis = self.cal_distance(i,0)
             min_k=0
             for j in range(1,self.K):
@@ -228,12 +222,12 @@ class our_k_means:
                 if(dis<min_dis):
                     min_dis = dis
                     min_k = j
-            self.ch_pt+=(self.table[i]!=min_k)
+                    
+            self.ch_pt += (self.table[i]!=min_k)
             self.table[i] = min_k
-            self.cent_c[min_k] +=1
+            self.cent_c[min_k] += 1
             t_sse+=min_dis
-            for j in range(self.DIM):
-                self.dis_k[min_k][j]+=self.data[i][j]
+            self.dis_k[min_k] += self.data[i]
                 
         return t_sse
 
@@ -244,6 +238,7 @@ class our_k_means:
                     self.cent[i][j] = self.dis_k[i][j]/self.cent_c[i]
                 else:
                     self.cent[i][j] = self.dis_k[i][j]
+                    
 
     def print_cent(self):
         print("Centroids:")
@@ -261,10 +256,16 @@ class our_k_means:
     
 
 
-# ## Here comes our k-means
+# In[ ]:
+
+
+
+
+
+# ## Result
 # ### Let's run for 1 time and check the performance
 
-# In[5]:
+# In[21]:
 
 
 result = our_k_means(data_x,data_y)
@@ -273,7 +274,7 @@ result.calculate_acc(1)
 
 # ## Print out the center's coordinates
 
-# In[6]:
+# In[22]:
 
 
 result.print_cent()
@@ -281,18 +282,19 @@ result.print_cent()
 
 # ## Then , we run it for (Simulate_time) times
 
-# In[7]:
+# In[31]:
 
 
+Simulate_time = 10
 # Calculate
 result.calculate_acc(Simulate_time)
-result.acc
+print(result.acc)
 
 
 # # Let's run the k-means provides by sklearn
 # ### -Then we can estimate how good we've done
 
-# In[8]:
+# In[32]:
 
 
 data_x = pd.DataFrame(data_x)
@@ -312,7 +314,7 @@ def k_means_sklearn(x):
     return cluster_labels
 
 
-# In[9]:
+# In[33]:
 
 
 #all the clusters should be 1-D DataFrame which contains the same labels
@@ -334,7 +336,7 @@ def find_mass(k,dim,table,data):
     return mass
 
 
-# In[10]:
+# In[34]:
 
 
 def calculate_closest(k,origin,after_clustering):
@@ -349,7 +351,7 @@ def calculate_closest(k,origin,after_clustering):
     return closest 
 
 
-# In[11]:
+# In[35]:
 
 
 def relabel(origin_table,rename_table,target):
@@ -357,14 +359,14 @@ def relabel(origin_table,rename_table,target):
     return target
 
 
-# In[12]:
+# In[36]:
 
 
 
 cluster_labels = k_means_sklearn(data_x) # sklearn.cluster.k_means_sklearn
 
 
-# In[13]:
+# In[37]:
 
 
 #A list that can be used to compared the order of label
@@ -381,10 +383,16 @@ closest_sklearn    = calculate_closest(K,mass_origin,mass_sklean_kmeans).astype(
 cluster_labels     = relabel(temp,closest_sklearn ,cluster_labels)
 
 
-# In[14]:
+# In[38]:
 
 
 #Valid accuracy
 sklearn_acc = accuracy_score(data_y,cluster_labels)
 sklearn_acc
+
+
+# In[ ]:
+
+
+
 
